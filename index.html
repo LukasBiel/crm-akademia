@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Akademia Piłkarska</title>
+    <style>
+        :root {
+            --primary: #27ae60;
+            --primary-light: #2ecc71;
+            --accent: #2980b9;
+            --danger: #e74c3c;
+            --bg: #f0f4f8;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --muted: #7f8c8d;
+            --border: #dce1e7;
+            --radius: 10px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* LOADER BAR */
+        .loader-bar { height: 3px; background: var(--primary-light); width: 0; position: fixed; top: 0; left: 0; z-index: 999; transition: width 0.3s; }
+        .loader-bar.loading { width: 70%; }
+        .loader-bar.done { width: 100%; opacity: 0; transition: width 0.1s, opacity 0.4s 0.1s; }
+
+        /* NAV */
+        .nav { background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 4px; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .nav-brand { font-weight: 700; font-size: 1.05rem; color: var(--primary); margin-right: 16px; padding: 16px 0; white-space: nowrap; }
+        .nav-brand span { color: var(--text); }
+        .tab-btn { background: none; border: none; padding: 18px 20px; font-size: 0.88rem; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; transition: all 0.15s; white-space: nowrap; }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* PAGE */
+        .page { display: none; padding: 24px; max-width: 1440px; margin: 0 auto; }
+        .page.active { display: flex; flex-direction: column; gap: 20px; }
+
+        /* CARD */
+        .card { background: var(--card); border-radius: var(--radius); box-shadow: 0 2px 12px rgba(0,0,0,0.05); padding: 20px 24px; }
+        h2 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+        /* BUTTONS */
+        .btn { cursor: pointer; border: none; border-radius: 6px; font-weight: 600; font-size: 0.83rem; padding: 7px 14px; transition: 0.15s; font-family: inherit; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #219a52; }
+        .btn-accent { background: var(--accent); color: white; }
+        .btn-accent:hover { background: #2471a3; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-ghost { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: #e4e8ed; }
+        .btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+        .btn-full { width: 100%; padding: 12px; font-size: 0.92rem; }
+
+        /* INPUTS */
+        input[type=text], input[type=email], input[type=date], input[type=time], textarea, select {
+            width: 100%; padding: 8px 11px; border: 1px solid var(--border); border-radius: 6px;
+            font-size: 0.88rem; font-family: inherit; color: var(--text); background: white; transition: border-color 0.15s;
+        }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+        textarea { resize: vertical; min-height: 150px; }
+        label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-field { margin-bottom: 12px; }
+        input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+        .check-row { display: flex; align-items: center; gap: 8px; font-size: 0.87rem; margin-bottom: 10px; }
+        .check-row label { margin: 0; color: var(--text); font-weight: 400; }
+
+        .badge { display: inline-block; background: var(--bg); color: var(--muted); border-radius: 12px; padding: 2px 9px; font-size: 0.73rem; font-weight: 700; }
+
+        /* ======== TAB 1: KLIENCI ======== */
+        .search-row { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+        .search-row input { flex: 1; }
+        .filtered-info { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+
+        .table-wrap { overflow-y: auto; max-height: 66vh; border: 1px solid var(--border); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+        thead { position: sticky; top: 0; z-index: 10; }
+        th { background: #f5f7fa; color: var(--muted); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 9px 11px; text-align: left; border-bottom: 2px solid var(--border); white-space: nowrap; }
+        td { padding: 8px 11px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fafcfe; }
+        tr.row-selected td { background: #eafaf1; }
+        .col-check { width: 36px; }
+        .grupa-badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.73rem; font-weight: 700; white-space: nowrap; }
+
+        /* ======== TAB 2: MAILING ======== */
+        .mailing-layout { display: grid; grid-template-columns: 1fr 370px; gap: 20px; align-items: start; }
+
+        .groups-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+        .group-chip { cursor: pointer; padding: 5px 14px; border-radius: 20px; font-size: 0.81rem; font-weight: 600; border: 2px solid transparent; transition: 0.15s; user-select: none; }
+        .group-chip .chip-count { font-weight: 400; opacity: 0.75; font-size: 0.75rem; }
+
+        .select-all-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+
+        .recipients-area { min-height: 72px; max-height: 210px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 8px; display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start; }
+        .recipient-tag { display: flex; align-items: center; gap: 4px; background: #e3f2fd; color: #1565c0; border-radius: 20px; padding: 3px 10px; font-size: 0.77rem; font-weight: 600; max-width: 220px; }
+        .recipient-tag span.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .recipient-tag .rm { cursor: pointer; color: #90caf9; font-size: 1.1rem; line-height: 1; margin-left: 1px; transition: color 0.1s; flex-shrink: 0; }
+        .recipient-tag .rm:hover { color: var(--danger); }
+        .recipients-empty { color: var(--muted); font-size: 0.83rem; padding: 6px; }
+
+        .templates-row { display: flex; gap: 7px; align-items: center; margin-bottom: 12px; }
+        .templates-row select { flex: 1; min-width: 0; }
+
+        .compose-card { position: sticky; top: 64px; }
+
+        /* ======== TAB 3: KALENDARZ ======== */
+        .kalendarz-layout { display: grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start; }
+
+        .cal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .cal-month-label { flex: 1; font-size: 1.05rem; font-weight: 700; text-align: center; }
+        .cal-nav-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 11px; cursor: pointer; font-size: 1rem; transition: 0.15s; }
+        .cal-nav-btn:hover { background: var(--bg); }
+
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+        .cal-day-name { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; padding: 5px 0 7px; }
+        .cal-cell { min-height: 82px; background: white; border: 1px solid var(--border); border-radius: 6px; padding: 5px; cursor: pointer; transition: border-color 0.15s; overflow: hidden; }
+        .cal-cell:hover { border-color: var(--accent); }
+        .cal-cell.other-month { background: #f9f9f9; opacity: 0.45; pointer-events: none; }
+        .cal-cell.today { border-color: var(--primary); border-width: 2px; }
+        .cal-date { font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 3px; }
+        .cal-cell.today .cal-date { color: var(--primary); }
+        .cal-event-pill { font-size: 0.67rem; font-weight: 600; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #e3f2fd; color: #1565c0; }
+        .cal-event-pill.solo { background: #fce4ec; color: #b71c1c; }
+        .cal-more { font-size: 0.67rem; color: var(--muted); padding: 1px 4px; }
+
+        .summary-month { font-size: 0.88rem; font-weight: 700; margin-bottom: 12px; }
+        .summary-section { margin-bottom: 14px; }
+        .summary-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); margin-bottom: 6px; }
+        .summary-row { display: flex; justify-content: space-between; font-size: 0.81rem; padding: 4px 0; border-bottom: 1px solid var(--bg); }
+
+        /* MODALS */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 500; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: white; border-radius: 14px; padding: 26px 28px; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .modal h3 { font-size: 1.05rem; margin-bottom: 18px; }
+        .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+        .day-event-item { border: 1px solid var(--border); border-radius: 8px; padding: 11px 13px; margin-bottom: 8px; }
+        .day-event-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .day-event-meta { font-size: 0.79rem; color: var(--muted); margin-bottom: 7px; }
+        .day-event-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        /* time selects */
+        .time-sel { display: flex; align-items: center; gap: 4px; }
+        .time-sel select { width: auto; min-width: 56px; padding: 8px 6px; }
+        .time-sep { color: var(--muted); font-weight: 700; font-size: 1.1rem; line-height: 1; }
+
+        /* custom template picker */
+        .tpl-picker { position: relative; }
+        .tpl-trigger { width: 100%; text-align: left; padding: 8px 11px; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer; font-size: 0.88rem; color: var(--text); display: flex; justify-content: space-between; align-items: center; font-family: inherit; transition: border-color 0.15s; }
+        .tpl-trigger:hover { border-color: var(--accent); }
+        .tpl-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 300; max-height: 200px; overflow-y: auto; display: none; }
+        .tpl-list.open { display: block; }
+        .tpl-item { display: flex; align-items: center; padding: 7px 10px; gap: 6px; transition: background 0.1s; }
+        .tpl-item:hover { background: var(--bg); }
+        .tpl-item-name { flex: 1; font-size: 0.86rem; cursor: pointer; }
+        .tpl-del { color: var(--muted); font-size: 0.85rem; padding: 2px 6px; border-radius: 4px; cursor: pointer; background: none; border: none; font-family: inherit; line-height: 1; flex-shrink: 0; }
+        .tpl-del:hover { background: #fce4ec; color: var(--danger); }
+        .tpl-empty { padding: 10px 12px; font-size: 0.83rem; color: var(--muted); }
+
+        @media (max-width: 950px) {
+            .mailing-layout, .kalendarz-layout { grid-template-columns: 1fr; }
+            .compose-card { position: static; }
+            .page { padding: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="loader-bar" id="loaderBar"></div>
+
+<nav class="nav">
+    <div class="nav-brand">⚽ <span>Akademia</span></div>
+    <button class="tab-btn active" onclick="switchTab('klienci')" id="tab-klienci">Klienci</button>
+    <button class="tab-btn" onclick="switchTab('mailing')" id="tab-mailing">✉ Mailing</button>
+    <button class="tab-btn" onclick="switchTab('kalendarz')" id="tab-kalendarz">📅 Kalendarz</button>
+</nav>
+
+<!-- ======== TAB 1: KLIENCI ======== -->
+<div class="page active" id="page-klienci">
+    <div class="card">
+        <h2>Lista klientów <span class="badge" id="clientCount">–</span></h2>
+        <div class="search-row">
+            <input type="text" id="searchInput" placeholder="Szukaj po imieniu, nazwisku, emailu, grupie..." oninput="filterTable()">
+            <span class="filtered-info" id="filteredInfo"></span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-check"><input type="checkbox" id="selectAllMain" onchange="toggleAllVisible(this)"></th>
+                        <th>Grupa</th>
+                        <th>Imię</th>
+                        <th>Nazwisko</th>
+                        <th>Rej. SportBM</th>
+                        <th>Data ur.</th>
+                        <th>Opiekun</th>
+                        <th>E-mail opiekuna</th>
+                        <th>Telefon</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ======== TAB 2: MAILING ======== -->
+<div class="page" id="page-mailing">
+    <div class="mailing-layout">
+
+        <!-- LEFT: odbiory -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+            <div class="card">
+                <h2>Grupy</h2>
+                <div class="groups-wrap" id="groupChips"></div>
+                <div class="select-all-row">
+                    <button class="btn btn-ghost btn-sm" onclick="selectAllClients()">Zaznacz wszystkich</button>
+                    <button class="btn btn-ghost btn-sm" onclick="deselectAll()">Odznacz wszystkich</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Odbiorcy <span class="badge" id="recipientCount">0</span></h2>
+                <div class="recipients-area" id="recipientsArea">
+                    <span class="recipients-empty" id="recipientsEmpty">Brak wybranych odbiorców</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: composer -->
+        <div class="card compose-card">
+            <h2>Wiadomość</h2>
+
+            <div class="form-field">
+                <label>Szablon</label>
+                <div class="templates-row">
+                    <select id="templateSelect">
+                        <option value="">– wybierz szablon –</option>
+                    </select>
+                    <button class="btn btn-ghost btn-sm" onclick="loadTemplate()">Wczytaj</button>
+                    <button class="btn btn-ghost btn-sm" onclick="deleteTemplate()" title="Usuń">✕</button>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label>Tytuł maila</label>
+                <input type="text" id="mailSubject" placeholder="Wpisz tytuł...">
+            </div>
+
+            <div class="form-field">
+                <label>Treść maila</label>
+                <textarea id="mailBody" placeholder="Wpisz treść wiadomości..."></textarea>
+            </div>
+
+            <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:12px" onclick="saveTemplate()">💾 Zapisz jako szablon</button>
+            <button class="btn btn-accent btn-full" onclick="sendMail()">Wyślij do <span id="sendCount">0</span> odbiorców</button>
+        </div>
+    </div>
+</div>
+
+<!-- ======== TAB 3: KALENDARZ ======== -->
+<div class="page" id="page-kalendarz">
+    <div class="kalendarz-layout">
+
+        <div class="card">
+            <div class="cal-header">
+                <button class="cal-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+                <div class="cal-month-label" id="calMonthLabel"></div>
+                <button class="cal-nav-btn" onclick="changeMonth(1)">&#8250;</button>
+                <button class="btn btn-primary btn-sm" onclick="openAddEvent(null)">+ Dodaj</button>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+        </div>
+
+        <div>
+            <div class="card">
+                <h2>Podsumowanie miesiąca</h2>
+                <div id="calSummary"></div>
+                <button class="btn btn-ghost btn-sm" style="margin-top:12px;width:100%" onclick="exportSummary()">Eksportuj .txt</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: dodaj / edytuj wydarzenie -->
+<div class="modal-overlay" id="modalEvent">
+    <div class="modal">
+        <h3 id="modalEventTitle">Dodaj wydarzenie</h3>
+        <input type="hidden" id="eventId">
+
+        <div class="form-field">
+            <label>Szablon wydarzenia</label>
+            <div class="tpl-picker" id="eventTplPicker">
+                <button class="tpl-trigger" type="button" onclick="toggleEventTplPicker(event)">
+                    <span id="eventTplLabel">– wybierz szablon –</span><span>▾</span>
+                </button>
+                <div class="tpl-list" id="eventTplList"></div>
+            </div>
+        </div>
+
+        <div class="form-field">
+            <label>Grupa</label>
+            <select id="eventGrupa"><option value="">Wybierz grupę…</option></select>
+        </div>
+        <div class="form-field">
+            <label>Data</label>
+            <input type="date" id="eventData">
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label>Godzina startu</label>
+                <div class="time-sel">
+                    <select id="eventStartH"></select>
+                    <span class="time-sep">:</span>
+                    <select id="eventStartM"></select>
+                </div>
+            </div>
+            <div class="form-field">
+                <label>Godzina końca</label>
+                <div class="time-sel">
+                    <select id="eventKoniecH"></select>
+                    <span class="time-sep">:</span>
+                    <select id="eventKoniecM"></select>
+                </div>
+            </div>
+        </div>
+        <div class="check-row">
+            <input type="checkbox" id="eventSolo" checked>
+            <label for="eventSolo">Zajęcia solo (samodzielnie)</label>
+        </div>
+        <div class="check-row">
+            <input type="checkbox" id="eventPowtarzajace" onchange="toggleRepeatField()">
+            <label for="eventPowtarzajace">Powtarza się cyklicznie</label>
+        </div>
+        <div id="repeatUntilField" style="display:none">
+            <div class="form-field">
+                <label>Częstotliwość</label>
+                <select id="eventFrequency">
+                    <option value="7">Co tydzień</option>
+                    <option value="14">Co 2 tygodnie</option>
+                </select>
+            </div>
+            <div class="check-row" style="margin-bottom:8px">
+                <input type="checkbox" id="eventBezKonca" onchange="toggleBezKonca()">
+                <label for="eventBezKonca">Bez końca (aż ręcznie wyłączę)</label>
+            </div>
+            <div class="form-field" id="repeatDateField">
+                <label>Powtarzaj do</label>
+                <input type="date" id="eventPowtarzajDo">
+            </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:4px" onclick="saveEventTemplate()">💾 Zapisz jako szablon wydarzenia</button>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modalEvent')">Anuluj</button>
+            <button class="btn btn-primary" onclick="saveEvent()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: szczegóły dnia -->
+<div class="modal-overlay" id="modalDay">
+    <div class="modal">
+        <h3 id="modalDayTitle">Szczegóły dnia</h3>
+        <div id="modalDayContent"></div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('modalDay')">Zamknij</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddEvent(activeDayStr)">+ Dodaj wydarzenie</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // KONFIGURACJA — zmień ścieżki webhooków po skonfigurowaniu n8n
+    // ============================================================
+    const BASE_URL      = 'http://95.216.199.123:5678';
+    const WEBHOOK_DATA  = `${BASE_URL}/webhook/crm-data`;
+    const WEBHOOK_MAIL  = `${BASE_URL}/webhook/send-emails`;
+    // Pola JSON zwracane przez webhook (ustal z n8n Function node):
+    // grupa, imie, nazwisko, rejestracja_sportbm, data_urodzenia,
+    // imie_opiekuna, email_opiekuna, telefon_opiekuna
+
+    // ============================================================
+    // KOLORY GRUP
+    // ============================================================
+    const PALETA = [
+        { bg: '#e3f2fd', text: '#1565c0' },
+        { bg: '#fce4ec', text: '#ad1457' },
+        { bg: '#fff3e0', text: '#e65100' },
+        { bg: '#f3e5f5', text: '#6a1b9a' },
+        { bg: '#e0f7fa', text: '#00695c' },
+        { bg: '#fff9c4', text: '#f57f17' },
+        { bg: '#e8eaf6', text: '#283593' },
+        { bg: '#e8f5e9', text: '#2e7d32' },
+        { bg: '#fbe9e7', text: '#bf360c' },
+        { bg: '#f1f8e9', text: '#33691e' },
+        { bg: '#ede7f6', text: '#4527a0' },
+        { bg: '#e0f2f1', text: '#004d40' },
+    ];
+    let groupColorMap = {}; // nazwa grupy → index PALETY
+
+    function buildGroupColorMap() {
+        groupColorMap = {};
+        getUniqueGroups().forEach((g, i) => { groupColorMap[g] = i % PALETA.length; });
+    }
+    function groupColor(g) { return PALETA[groupColorMap[g] ?? 0]; }
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    let allClients      = [];
+    let filteredClients = [];
+    let selectedEmails  = new Set();
+    let activeGroups    = new Set();
+    let mailTemplates   = JSON.parse(localStorage.getItem('mail_templates') || '[]');
+    let eventTemplates  = JSON.parse(localStorage.getItem('event_templates') || '[]');
+    let calEvents       = JSON.parse(localStorage.getItem('calendar_events') || '[]');
+    let calYear         = new Date().getFullYear();
+    let calMonth        = new Date().getMonth();
+    let activeDayStr    = null;
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    async function init() {
+        loader(true);
+        try {
+            const res = await fetch(WEBHOOK_DATA);
+            allClients = await res.json();
+        } catch(e) {
+            allClients = [];
+            alert('Błąd ładowania danych. Sprawdź połączenie z n8n.');
+        } finally {
+            loader(false);
+        }
+        filteredClients = [...allClients];
+        buildGroupColorMap();
+        renderTable();
+        renderGroupChips();
+        fillGroupSelect();
+        renderTemplateSelect();
+        initTimeSelects();
+        renderEventTemplateList();
+        renderCalendar();
+        document.getElementById('clientCount').textContent = allClients.length;
+    }
+
+    // ============================================================
+    // TABS
+    // ============================================================
+    function switchTab(tab) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('page-' + tab).classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    // ============================================================
+    // TAB 1: KLIENCI
+    // ============================================================
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        filteredClients.forEach(c => {
+            const sel = selectedEmails.has(c.email_opiekuna);
+            const tr = document.createElement('tr');
+            if (sel) tr.classList.add('row-selected');
+            const col = groupColor(c.grupa);
+            tr.innerHTML = `
+                <td><input type="checkbox" ${sel ? 'checked' : ''} onchange="toggleClient('${esc(c.email_opiekuna)}', this)"></td>
+                <td><span class="grupa-badge" style="background:${col.bg};color:${col.text}">${esc(c.grupa)}</span></td>
+                <td>${esc(c.imie)}</td>
+                <td>${esc(c.nazwisko)}</td>
+                <td>${esc(c.rejestracja_sportbm)}</td>
+                <td>${esc(c.data_urodzenia)}</td>
+                <td>${esc(c.imie_opiekuna)}</td>
+                <td>${esc(c.email_opiekuna)}</td>
+                <td>${esc(c.telefon_opiekuna)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        const total = allClients.length;
+        const shown = filteredClients.length;
+        document.getElementById('filteredInfo').textContent = shown < total ? `(pokazano ${shown} z ${total})` : '';
+    }
+
+    function filterTable() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        filteredClients = allClients.filter(c =>
+            ['imie','nazwisko','email_opiekuna','grupa','imie_opiekuna'].some(k => (c[k]||'').toLowerCase().includes(q))
+        );
+        renderTable();
+    }
+
+    function toggleAllVisible(src) {
+        filteredClients.forEach(c => {
+            if (!c.email_opiekuna) return;
+            if (src.checked) selectedEmails.add(c.email_opiekuna);
+            else selectedEmails.delete(c.email_opiekuna);
+        });
+        syncGroupChipState();
+        renderTable();
+        renderRecipients();
+    }
+
+    function toggleClient(email, cb) {
+        if (!email) return;
+        if (cb.checked) selectedEmails.add(email);
+        else selectedEmails.delete(email);
+        cb.closest('tr').classList.toggle('row-selected', cb.checked);
+        syncGroupChipState();
+        renderRecipients();
+    }
+
+    // ============================================================
+    // TAB 2: MAILING — grupy
+    // ============================================================
+    function getUniqueGroups() {
+        return [...new Set(allClients.map(c => c.grupa).filter(Boolean))].sort();
+    }
+
+    function renderGroupChips() {
+        const wrap = document.getElementById('groupChips');
+        wrap.innerHTML = '';
+        getUniqueGroups().forEach(g => {
+            const count = allClients.filter(c => c.grupa === g).length;
+            const col = groupColor(g);
+            const isActive = activeGroups.has(g);
+            const chip = document.createElement('div');
+            chip.className = 'group-chip';
+            chip.dataset.group = g;
+            chip.style.background = isActive ? col.text : col.bg;
+            chip.style.color      = isActive ? '#fff' : col.text;
+            chip.style.border     = `2px solid ${col.text}`;
+            chip.innerHTML = `${esc(g)} <span class="chip-count">(${count})</span>`;
+            chip.onclick = () => toggleGroupChip(g);
+            wrap.appendChild(chip);
+        });
+    }
+
+    function toggleGroupChip(group) {
+        const groupEmails = allClients.filter(c => c.grupa === group && c.email_opiekuna).map(c => c.email_opiekuna);
+        if (activeGroups.has(group)) {
+            activeGroups.delete(group);
+            groupEmails.forEach(e => {
+                // keep email if it belongs to another active group
+                const inOther = allClients.some(c => c.email_opiekuna === e && activeGroups.has(c.grupa));
+                if (!inOther) selectedEmails.delete(e);
+            });
+        } else {
+            activeGroups.add(group);
+            groupEmails.forEach(e => selectedEmails.add(e));
+        }
+        renderGroupChips();
+        renderTable();
+        renderRecipients();
+    }
+
+    function syncGroupChipState() {
+        activeGroups.clear();
+        getUniqueGroups().forEach(g => {
+            const emails = allClients.filter(c => c.grupa === g && c.email_opiekuna).map(c => c.email_opiekuna);
+            if (emails.length && emails.every(e => selectedEmails.has(e))) activeGroups.add(g);
+        });
+        renderGroupChips();
+    }
+
+    function selectAllClients() {
+        allClients.forEach(c => { if (c.email_opiekuna) selectedEmails.add(c.email_opiekuna); });
+        syncGroupChipState();
+        renderTable();
+        renderRecipients();
+    }
+
+    function deselectAll() {
+        selectedEmails.clear();
+        activeGroups.clear();
+        renderGroupChips();
+        renderTable();
+        renderRecipients();
+    }
+
+    function renderRecipients() {
+        const area = document.getElementById('recipientsArea');
+        const count = selectedEmails.size;
+        document.getElementById('recipientCount').textContent = count;
+        document.getElementById('sendCount').textContent = count;
+
+        if (count === 0) {
+            area.innerHTML = '';
+            area.appendChild(document.getElementById('recipientsEmpty'));
+            return;
+        }
+        area.innerHTML = '';
+        selectedEmails.forEach(email => {
+            const children = allClients.filter(c => c.email_opiekuna === email);
+            const label = children.length
+                ? `${children[0].imie} ${children[0].nazwisko}${children.length > 1 ? ` +${children.length - 1}` : ''}`
+                : email;
+            const tag = document.createElement('div');
+            tag.className = 'recipient-tag';
+            tag.innerHTML = `<span class="name" title="${esc(email)}">${esc(label)}</span><span class="rm" onclick="removeRecipient('${esc(email)}')">×</span>`;
+            area.appendChild(tag);
+        });
+    }
+
+    function removeRecipient(email) {
+        selectedEmails.delete(email);
+        syncGroupChipState();
+        renderTable();
+        renderRecipients();
+    }
+
+    // ============================================================
+    // TIME SELECTS — helpery
+    // ============================================================
+    function initTimeSelects() {
+        ['eventStartH','eventKoniecH'].forEach(id => {
+            const sel = document.getElementById(id);
+            sel.innerHTML = '';
+            for (let h = 0; h <= 23; h++) {
+                const o = document.createElement('option');
+                o.value = h; o.textContent = String(h).padStart(2,'0');
+                sel.appendChild(o);
+            }
+        });
+        ['eventStartM','eventKoniecM'].forEach(id => {
+            const sel = document.getElementById(id);
+            sel.innerHTML = '';
+            for (let m = 0; m < 60; m += 5) {
+                const o = document.createElement('option');
+                o.value = m; o.textContent = String(m).padStart(2,'0');
+                sel.appendChild(o);
+            }
+        });
+        // domyślnie 10:00 i 11:00
+        document.getElementById('eventStartH').value = 10;
+        document.getElementById('eventStartM').value = 0;
+        document.getElementById('eventKoniecH').value = 11;
+        document.getElementById('eventKoniecM').value = 0;
+    }
+
+    function getTime(hId, mId) {
+        const h = document.getElementById(hId).value;
+        const m = document.getElementById(mId).value;
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    }
+
+    function setTime(hId, mId, timeStr) {
+        if (!timeStr) return;
+        const [h, m] = timeStr.split(':').map(Number);
+        document.getElementById(hId).value = h;
+        document.getElementById(mId).value = Math.round(m / 5) * 5 % 60;
+    }
+
+    // ============================================================
+    // SZABLONY WYDARZEŃ (kalendarz)
+    // ============================================================
+    function renderEventTemplateList() {
+        const list = document.getElementById('eventTplList');
+        list.innerHTML = '';
+        if (!eventTemplates.length) {
+            list.innerHTML = '<div class="tpl-empty">Brak zapisanych szablonów</div>';
+            return;
+        }
+        eventTemplates.forEach((t, i) => {
+            const item = document.createElement('div');
+            item.className = 'tpl-item';
+            item.innerHTML = `
+                <span class="tpl-item-name" onclick="loadEventTemplateByIndex(${i})">${esc(t.nazwa)}</span>
+                <button class="tpl-del" onclick="deleteEventTemplateByIndex(event,${i})" title="Usuń">✕</button>`;
+            list.appendChild(item);
+        });
+    }
+
+    function toggleEventTplPicker(e) {
+        e.stopPropagation();
+        document.getElementById('eventTplList').classList.toggle('open');
+    }
+
+    function loadEventTemplateByIndex(i) {
+        const t = eventTemplates[i];
+        document.getElementById('eventGrupa').value  = t.grupa;
+        document.getElementById('eventSolo').checked = t.solo;
+        setTime('eventStartH', 'eventStartM', t.start);
+        setTime('eventKoniecH', 'eventKoniecM', t.koniec);
+        document.getElementById('eventTplLabel').textContent = t.nazwa;
+        document.getElementById('eventTplList').classList.remove('open');
+    }
+
+    function deleteEventTemplateByIndex(e, i) {
+        e.stopPropagation();
+        if (!confirm(`Usunąć szablon "${eventTemplates[i].nazwa}"?`)) return;
+        eventTemplates.splice(i, 1);
+        localStorage.setItem('event_templates', JSON.stringify(eventTemplates));
+        renderEventTemplateList();
+    }
+
+    function saveEventTemplate() {
+        const nazwa = prompt('Nazwa szablonu wydarzenia:');
+        if (!nazwa) return;
+        eventTemplates.push({
+            nazwa,
+            grupa:  document.getElementById('eventGrupa').value,
+            start:  getTime('eventStartH', 'eventStartM'),
+            koniec: getTime('eventKoniecH', 'eventKoniecM'),
+            solo:   document.getElementById('eventSolo').checked,
+        });
+        localStorage.setItem('event_templates', JSON.stringify(eventTemplates));
+        renderEventTemplateList();
+    }
+
+    // ============================================================
+    // TAB 2: MAILING — szablony
+    // ============================================================
+    function renderTemplateSelect() {
+        const sel = document.getElementById('templateSelect');
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">– wybierz szablon –</option>';
+        mailTemplates.forEach((t, i) => {
+            const o = document.createElement('option');
+            o.value = i; o.textContent = t.nazwa;
+            sel.appendChild(o);
+        });
+        if (prev !== '') sel.value = prev;
+    }
+
+    function saveTemplate() {
+        const nazwa = prompt('Nazwa szablonu:');
+        if (!nazwa) return;
+        mailTemplates.push({
+            nazwa,
+            tytul: document.getElementById('mailSubject').value,
+            tresc: document.getElementById('mailBody').value
+        });
+        localStorage.setItem('mail_templates', JSON.stringify(mailTemplates));
+        renderTemplateSelect();
+    }
+
+    function loadTemplate() {
+        const i = document.getElementById('templateSelect').value;
+        if (i === '') return alert('Wybierz szablon z listy.');
+        const t = mailTemplates[i];
+        document.getElementById('mailSubject').value = t.tytul;
+        document.getElementById('mailBody').value = t.tresc;
+    }
+
+    function deleteTemplate() {
+        const i = document.getElementById('templateSelect').value;
+        if (i === '') return alert('Wybierz szablon do usunięcia.');
+        if (!confirm(`Usunąć szablon "${mailTemplates[i].nazwa}"?`)) return;
+        mailTemplates.splice(i, 1);
+        localStorage.setItem('mail_templates', JSON.stringify(mailTemplates));
+        renderTemplateSelect();
+    }
+
+    // ============================================================
+    // TAB 2: MAILING — wysyłka
+    // ============================================================
+    async function sendMail() {
+        const emails  = [...selectedEmails];
+        const subject = document.getElementById('mailSubject').value.trim();
+        const message = document.getElementById('mailBody').value.trim();
+        if (!emails.length) return alert('Wybierz przynajmniej jednego odbiorcę!');
+        if (!subject) return alert('Podaj tytuł maila!');
+        if (!message) return alert('Wpisz treść maila!');
+        if (!confirm(`Wysłać wiadomość do ${emails.length} odbiorców?`)) return;
+
+        loader(true);
+        try {
+            const res = await fetch(WEBHOOK_MAIL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ emails, subject, message })
+            });
+            if (res.ok) alert(`Wysłano do ${emails.length} osób!`);
+            else alert('Błąd po stronie serwera. Sprawdź n8n.');
+        } catch(e) {
+            alert('Błąd połączenia podczas wysyłki.');
+        } finally {
+            loader(false);
+        }
+    }
+
+    // ============================================================
+    // TAB 3: KALENDARZ
+    // ============================================================
+    const DAYS_PL   = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
+    const MONTHS_PL = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+
+    function renderCalendar() {
+        document.getElementById('calMonthLabel').textContent = `${MONTHS_PL[calMonth]} ${calYear}`;
+        const grid = document.getElementById('calGrid');
+        grid.innerHTML = '';
+
+        DAYS_PL.forEach(d => {
+            const el = document.createElement('div');
+            el.className = 'cal-day-name';
+            el.textContent = d;
+            grid.appendChild(el);
+        });
+
+        const firstDay = new Date(calYear, calMonth, 1);
+        let offset = firstDay.getDay() - 1;
+        if (offset < 0) offset = 6;
+        const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+        const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
+        const today       = new Date();
+        const totalCells  = Math.ceil((offset + daysInMonth) / 7) * 7;
+
+        for (let i = 0; i < totalCells; i++) {
+            let date, other = false;
+            if (i < offset) {
+                date = new Date(calYear, calMonth - 1, daysInPrev - offset + i + 1);
+                other = true;
+            } else if (i >= offset + daysInMonth) {
+                date = new Date(calYear, calMonth + 1, i - offset - daysInMonth + 1);
+                other = true;
+            } else {
+                date = new Date(calYear, calMonth, i - offset + 1);
+            }
+
+            const ds = fmtDate(date);
+            const evs = calEvents.filter(e => e.data === ds);
+            const isToday = date.toDateString() === today.toDateString();
+
+            const cell = document.createElement('div');
+            cell.className = 'cal-cell' + (other ? ' other-month' : '') + (isToday ? ' today' : '');
+            let html = `<div class="cal-date">${date.getDate()}</div>`;
+            evs.slice(0, 3).forEach(ev => {
+                html += `<div class="cal-event-pill ${ev.solo ? 'solo' : ''}">${esc(ev.start)} ${esc(ev.grupa)}</div>`;
+            });
+            if (evs.length > 3) html += `<div class="cal-more">+${evs.length - 3} więcej</div>`;
+            cell.innerHTML = html;
+            if (!other) cell.onclick = () => openDayModal(ds);
+            grid.appendChild(cell);
+        }
+
+        renderCalSummary();
+    }
+
+    function changeMonth(dir) {
+        calMonth += dir;
+        if (calMonth > 11) { calMonth = 0; calYear++; }
+        if (calMonth < 0)  { calMonth = 11; calYear--; }
+        renderCalendar();
+    }
+
+    function openDayModal(ds) {
+        activeDayStr = ds;
+        document.getElementById('modalDayTitle').textContent = `Dzień: ${ds}`;
+        const evs = calEvents.filter(e => e.data === ds);
+        const content = document.getElementById('modalDayContent');
+
+        if (!evs.length) {
+            content.innerHTML = '<p style="color:var(--muted);font-size:0.86rem;padding:8px 0">Brak wydarzeń w tym dniu.</p>';
+        } else {
+            content.innerHTML = evs.map(ev => `
+                <div class="day-event-item">
+                    <div class="day-event-header">
+                        <strong>${esc(ev.grupa)}</strong>
+                        <span style="font-size:0.78rem;color:var(--muted)">${esc(ev.start)} – ${esc(ev.koniec)}</span>
+                    </div>
+                    <div class="day-event-meta">${ev.solo ? '🔴 Solo' : '🔵 Nie solo'}${ev.seriesId ? ' &nbsp;🔁 Seria' : ''}</div>
+                    <div class="day-event-actions">
+                        <button class="btn btn-ghost btn-sm" onclick="editEvent('${ev.id}')">Edytuj</button>
+                        ${ev.seriesId
+                            ? `<button class="btn btn-ghost btn-sm" onclick="deleteEvent('${ev.id}', false)">Usuń to</button>
+                               <button class="btn btn-danger btn-sm" onclick="deleteEvent('${ev.id}', true)">Usuń to i kolejne</button>`
+                            : `<button class="btn btn-danger btn-sm" onclick="deleteEvent('${ev.id}', false)">Usuń</button>`
+                        }
+                    </div>
+                </div>`).join('');
+        }
+        openModal('modalDay');
+    }
+
+    function resetEventModal() {
+        document.getElementById('eventSolo').checked = true;
+        document.getElementById('eventPowtarzajace').checked = false;
+        document.getElementById('eventBezKonca').checked = false;
+        document.getElementById('eventPowtarzajDo').value = '';
+        document.getElementById('eventFrequency').value = '7';
+        document.getElementById('repeatUntilField').style.display = 'none';
+        document.getElementById('repeatDateField').style.display = 'block';
+        document.getElementById('eventTplLabel').textContent = '– wybierz szablon –';
+    }
+
+    function openAddEvent(ds) {
+        document.getElementById('modalEventTitle').textContent = 'Dodaj wydarzenie';
+        document.getElementById('eventId').value = '';
+        document.getElementById('eventGrupa').value = '';
+        document.getElementById('eventData').value = ds || fmtDate(new Date());
+        document.getElementById('eventStartH').value = 10;
+        document.getElementById('eventStartM').value = 0;
+        document.getElementById('eventKoniecH').value = 11;
+        document.getElementById('eventKoniecM').value = 0;
+        resetEventModal();
+        closeModal('modalDay');
+        openModal('modalEvent');
+    }
+
+    function editEvent(id) {
+        const ev = calEvents.find(e => e.id === id);
+        if (!ev) return;
+        document.getElementById('modalEventTitle').textContent = 'Edytuj wydarzenie';
+        document.getElementById('eventId').value = ev.id;
+        document.getElementById('eventGrupa').value = ev.grupa;
+        document.getElementById('eventData').value = ev.data;
+        setTime('eventStartH', 'eventStartM', ev.start);
+        setTime('eventKoniecH', 'eventKoniecM', ev.koniec);
+        document.getElementById('eventSolo').checked = ev.solo;
+        document.getElementById('eventPowtarzajace').checked = false;
+        document.getElementById('eventBezKonca').checked = false;
+        document.getElementById('eventPowtarzajDo').value = '';
+        document.getElementById('eventFrequency').value = '7';
+        document.getElementById('repeatUntilField').style.display = 'none';
+        document.getElementById('repeatDateField').style.display = 'block';
+        document.getElementById('eventTplLabel').textContent = '– wybierz szablon –';
+        closeModal('modalDay');
+        openModal('modalEvent');
+    }
+
+    function deleteEvent(id, seriesForward) {
+        const ev = calEvents.find(e => e.id === id);
+        if (!ev) return;
+        if (seriesForward === undefined && ev.seriesId) {
+            // pokaż wybór w modalu — wywołane z przycisku bez argumentu
+            return; // obsługa przez dwa oddzielne przyciski w HTML
+        }
+        if (seriesForward) {
+            calEvents = calEvents.filter(e => !(e.seriesId === ev.seriesId && e.data >= ev.data));
+        } else {
+            calEvents = calEvents.filter(e => e.id !== id);
+        }
+        saveCalEvents();
+        closeModal('modalDay');
+        renderCalendar();
+    }
+
+    function toggleRepeatField() {
+        const on = document.getElementById('eventPowtarzajace').checked;
+        document.getElementById('repeatUntilField').style.display = on ? 'block' : 'none';
+    }
+
+    function toggleBezKonca() {
+        const bezKonca = document.getElementById('eventBezKonca').checked;
+        document.getElementById('repeatDateField').style.display = bezKonca ? 'none' : 'block';
+    }
+
+    function saveEvent() {
+        const grupa       = document.getElementById('eventGrupa').value;
+        const data        = document.getElementById('eventData').value;
+        const start       = getTime('eventStartH', 'eventStartM');
+        const koniec      = getTime('eventKoniecH', 'eventKoniecM');
+        const solo        = document.getElementById('eventSolo').checked;
+        const repeat      = document.getElementById('eventPowtarzajace').checked;
+        const bezKonca    = document.getElementById('eventBezKonca').checked;
+        const repeatUntil = document.getElementById('eventPowtarzajDo').value;
+        const freq        = parseInt(document.getElementById('eventFrequency').value) || 7;
+        const existingId  = document.getElementById('eventId').value;
+
+        if (!grupa || !data) return alert('Wypełnij grupę i datę!');
+
+        if (existingId) {
+            const ev = calEvents.find(e => e.id === existingId);
+            if (ev) Object.assign(ev, { grupa, data, start, koniec, solo });
+            // jeśli użytkownik dodał powtarzanie przy edycji — generuj od kolejnej daty
+            if (repeat) {
+                const newSeriesId = uid();
+                if (ev) ev.seriesId = newSeriesId;
+                const until = bezKonca
+                    ? new Date(new Date(data).setFullYear(new Date(data).getFullYear() + 2))
+                    : (repeatUntil ? new Date(repeatUntil) : null);
+                if (until) {
+                    let next = new Date(data);
+                    while (true) {
+                        next.setDate(next.getDate() + freq);
+                        if (next > until) break;
+                        calEvents.push({ id: uid(), seriesId: newSeriesId, grupa, data: fmtDate(next), start, koniec, solo });
+                    }
+                }
+            }
+        } else {
+            const seriesId = repeat ? uid() : null;
+            calEvents.push({ id: uid(), seriesId, grupa, data, start, koniec, solo });
+            if (repeat) {
+                const until = bezKonca
+                    ? new Date(new Date(data).setFullYear(new Date(data).getFullYear() + 2))
+                    : (repeatUntil ? new Date(repeatUntil) : null);
+                if (until) {
+                    let next = new Date(data);
+                    while (true) {
+                        next.setDate(next.getDate() + freq);
+                        if (next > until) break;
+                        calEvents.push({ id: uid(), seriesId, grupa, data: fmtDate(next), start, koniec, solo });
+                    }
+                }
+            }
+        }
+
+        saveCalEvents();
+        closeModal('modalEvent');
+        renderCalendar();
+    }
+
+    function renderCalSummary() {
+        const evs = calEvents.filter(e => {
+            const d = new Date(e.data);
+            return d.getFullYear() === calYear && d.getMonth() === calMonth;
+        });
+        const solo    = evs.filter(e => e.solo);
+        const nieSolo = evs.filter(e => !e.solo);
+
+        const groupCount = arr => {
+            const m = {};
+            arr.forEach(e => { m[e.grupa] = (m[e.grupa] || 0) + 1; });
+            return m;
+        };
+
+        const sec = (label, groups, total) => {
+            if (!total) return `<div class="summary-section"><div class="summary-label">${label}</div><div style="font-size:0.8rem;color:var(--muted)">Brak zajęć</div></div>`;
+            const rows = Object.entries(groups).map(([g, n]) =>
+                `<div class="summary-row"><strong>${esc(g)}</strong><span>${n}x</span></div>`).join('');
+            return `<div class="summary-section"><div class="summary-label">${label} (${total} łącznie)</div>${rows}</div>`;
+        };
+
+        document.getElementById('calSummary').innerHTML =
+            `<div class="summary-month">${MONTHS_PL[calMonth]} ${calYear}</div>` +
+            sec('Zajęcia solo', groupCount(solo), solo.length) +
+            sec('Zajęcia nie-solo', groupCount(nieSolo), nieSolo.length);
+    }
+
+    function exportSummary() {
+        const evs = calEvents.filter(e => {
+            const d = new Date(e.data);
+            return d.getFullYear() === calYear && d.getMonth() === calMonth;
+        });
+        const solo    = evs.filter(e => e.solo);
+        const nieSolo = evs.filter(e => !e.solo);
+        const gc = arr => { const m = {}; arr.forEach(e => { m[e.grupa] = (m[e.grupa]||0)+1; }); return m; };
+        const fmt = g => Object.entries(g).map(([k,v]) => `  ${v}x ${k}`).join('\n') || '  Brak';
+        const txt = `Podsumowanie: ${MONTHS_PL[calMonth]} ${calYear}\n\nZajęcia solo (${solo.length} łącznie):\n${fmt(gc(solo))}\n\nZajęcia nie-solo (${nieSolo.length} łącznie):\n${fmt(gc(nieSolo))}`;
+        const a = Object.assign(document.createElement('a'), {
+            href: URL.createObjectURL(new Blob([txt], { type: 'text/plain;charset=utf-8' })),
+            download: `podsumowanie_${MONTHS_PL[calMonth]}_${calYear}.txt`
+        });
+        a.click();
+    }
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    function fillGroupSelect() {
+        const sel = document.getElementById('eventGrupa');
+        sel.innerHTML = '<option value="">Wybierz grupę…</option>';
+        getUniqueGroups().forEach(g => {
+            const o = document.createElement('option');
+            o.value = g; o.textContent = g;
+            sel.appendChild(o);
+        });
+    }
+
+    function openModal(id)  { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    document.querySelectorAll('.modal-overlay').forEach(ov =>
+        ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); })
+    );
+
+    document.addEventListener('click', () => {
+        document.getElementById('eventTplList')?.classList.remove('open');
+    });
+
+    function loader(on) {
+        const bar = document.getElementById('loaderBar');
+        bar.className = 'loader-bar' + (on ? ' loading' : ' done');
+        if (!on) setTimeout(() => { bar.className = 'loader-bar'; }, 600);
+    }
+
+    function fmtDate(d) {
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+    function esc(v) {
+        if (v == null) return '';
+        return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function saveCalEvents() { localStorage.setItem('calendar_events', JSON.stringify(calEvents)); }
+
+    // ============================================================
+    init();
+</script>
+</body>
+</html>
