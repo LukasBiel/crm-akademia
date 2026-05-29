@@ -263,7 +263,7 @@
                     <input type="checkbox" id="attachPlakat" onchange="togglePlakat(this)">
                     <label for="attachPlakat" style="font-weight:600;color:var(--text)">Dołącz plakat do maila</label>
                 </div>
-                <img id="plakatPreview" src="http://95.216.199.123/plakat.jpg"
+                <img id="plakatPreview" src="https://raw.githubusercontent.com/LukasBiel/crm-akademia/main/plakat.jpg"
                      style="display:none;max-height:100px;border-radius:6px;border:1px solid var(--border)">
             </div>
 
@@ -427,7 +427,7 @@
     let filteredClients = [];
     let selectedEmails  = new Set();
     let activeGroups    = new Set();
-    const PLAKAT_URL    = 'http://95.216.199.123/plakat.jpg';
+    const PLAKAT_URL    = 'https://raw.githubusercontent.com/LukasBiel/crm-akademia/main/plakat.jpg';
     let plakatDolaczony = false;
     let mailTemplates   = JSON.parse(localStorage.getItem('mail_templates') || '[]');
     let eventTemplates  = JSON.parse(localStorage.getItem('event_templates') || '[]');
