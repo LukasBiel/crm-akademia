@@ -257,6 +257,19 @@
                 <textarea id="mailBody" placeholder="Wpisz treść wiadomości..."></textarea>
             </div>
 
+            <div class="form-field">
+                <label>Załącznik (zdjęcie)</label>
+                <div id="attachmentArea" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <label for="attachmentInput" class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0">📎 Wybierz plik</label>
+                    <input type="file" id="attachmentInput" accept="image/*" style="display:none" onchange="handleAttachment(this)">
+                    <span id="attachmentName" style="font-size:0.8rem;color:var(--muted)">Brak załącznika</span>
+                    <button id="attachmentRemove" class="btn btn-ghost btn-sm" style="display:none;padding:4px 8px" onclick="removeAttachment()" title="Usuń załącznik">✕</button>
+                </div>
+                <div id="attachmentPreview" style="margin-top:8px;display:none">
+                    <img id="attachmentImg" style="max-height:80px;max-width:100%;border-radius:6px;border:1px solid var(--border)">
+                </div>
+            </div>
+
             <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:12px" onclick="saveTemplate()">💾 Zapisz jako szablon</button>
             <button class="btn btn-accent btn-full" onclick="sendMail()">Wyślij do <span id="sendCount">0</span> odbiorców</button>
         </div>
@@ -417,6 +430,7 @@
     let filteredClients = [];
     let selectedEmails  = new Set();
     let activeGroups    = new Set();
+    let attachment      = null; // { filename, data (base64), contentType }
     let mailTemplates   = JSON.parse(localStorage.getItem('mail_templates') || '[]');
     let eventTemplates  = JSON.parse(localStorage.getItem('event_templates') || '[]');
     let calEvents       = JSON.parse(localStorage.getItem('calendar_events') || '[]');
@@ -716,6 +730,34 @@
     }
 
     // ============================================================
+    // TAB 2: MAILING — załącznik
+    // ============================================================
+    function handleAttachment(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const dataUrl = e.target.result;
+            const base64  = dataUrl.split(',')[1];
+            attachment = { filename: file.name, data: base64, contentType: file.type };
+            document.getElementById('attachmentName').textContent = file.name;
+            document.getElementById('attachmentRemove').style.display = 'inline-block';
+            document.getElementById('attachmentImg').src = dataUrl;
+            document.getElementById('attachmentPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeAttachment() {
+        attachment = null;
+        document.getElementById('attachmentInput').value = '';
+        document.getElementById('attachmentName').textContent = 'Brak załącznika';
+        document.getElementById('attachmentRemove').style.display = 'none';
+        document.getElementById('attachmentPreview').style.display = 'none';
+        document.getElementById('attachmentImg').src = '';
+    }
+
+    // ============================================================
     // TAB 2: MAILING — szablony
     // ============================================================
     function renderTemplateSelect() {
@@ -773,10 +815,15 @@
 
         loader(true);
         try {
+            const htmlMessage = message.replace(/\n/g, '<br>')
+                + (attachment
+                    ? `<br><br><img src="data:${attachment.contentType};base64,${attachment.data}" style="max-width:100%;height:auto;border-radius:6px">`
+                    : '');
+            const payload = { emails, subject, message: htmlMessage };
             const res = await fetch(WEBHOOK_MAIL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ emails, subject, message })
+                body: JSON.stringify(payload)
             });
             if (res.ok) alert(`Wysłano do ${emails.length} osób!`);
             else alert('Błąd po stronie serwera. Sprawdź n8n.');
