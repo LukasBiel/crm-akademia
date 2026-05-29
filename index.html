@@ -795,7 +795,7 @@
         try {
             const htmlMessage = message.replace(/\n/g, '<br>')
                 + (plakatDolaczony
-                    ? `<br><br><img src="${PLAKAT_URL}" style="max-width:100%;height:auto;border-radius:6px">`
+                    ? `<br><br><img src="${PLAKAT_URL}" style="width:600px;max-width:100%;height:auto;border-radius:6px">`
                     : '');
             const payload = { emails, subject, message: htmlMessage };
             const res = await fetch(WEBHOOK_MAIL, {
